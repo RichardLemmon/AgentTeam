@@ -218,7 +218,7 @@ The `member_id` is the agent's identity within a project. An agent playing the s
 
 ---
 
-## MCP Tool Surface (34 tools)
+## MCP Tool Surface (35 tools)
 
 Naming convention: `list_*` for collections, `get_*` for single records, `create_*`/`add_*`/`log_*` for writes, `update_*` for mutations.
 
@@ -241,7 +241,7 @@ Naming convention: `list_*` for collections, `get_*` for single records, `create
 - Input: `status` (string, optional — filter)
 - Returns: `[{ id, name, status, created_at, updated_at }]`
 
-### Project Summaries (3 tools)
+### Project Summaries (4 tools)
 
 **`get_project_summary`**
 - Input: `project_id` (string, required)
@@ -252,9 +252,14 @@ Naming convention: `list_*` for collections, `get_*` for single records, `create
 - Returns: `{ id, project_id, version, created_at }`
 - Creates a new version row; previous versions preserved
 
+**`get_summary_version`**
+- Input: `summary_id` (string, required)
+- Returns: `{ id, project_id, content, version, created_at }`
+- Retrieves a specific historical version by its ID
+
 **`list_summary_history`**
 - Input: `project_id` (string, required)
-- Returns: `[{ id, version, created_at }]` (content omitted for brevity; use `get_project_summary` with version)
+- Returns: `[{ id, version, created_at }]` (use `get_summary_version` to retrieve full content of a specific version)
 
 ### Team Members (3 tools)
 
@@ -332,6 +337,7 @@ Naming convention: `list_*` for collections, `get_*` for single records, `create
 **`add_discussion_message`**
 - Input: `discussion_id` (string, required), `member_id` (string, required), `content` (string, required)
 - Returns: `{ id, discussion_id, member_id, created_at }`
+- Member must be a participant of the discussion. Returns `INVALID_INPUT` error otherwise.
 
 **`update_discussion_summary`**
 - Input: `discussion_id` (string, required), `summary` (string, required)
@@ -472,7 +478,7 @@ mcp-server/
 │   │   └── connection.ts     # SQLite connection management (WAL mode)
 │   └── tools/
 │       ├── projects.ts       # create, get, update_status, list
-│       ├── summaries.ts      # get, update, list_history
+│       ├── summaries.ts      # get, get_version, update, list_history
 │       ├── team-members.ts   # add, remove, list
 │       ├── tasks.ts          # create, update, get, list
 │       ├── work-entries.ts   # log, get_my_work, get_history
