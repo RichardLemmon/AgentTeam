@@ -93,7 +93,8 @@ agents/
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "better-sqlite3": "^11.8.2"
+    "better-sqlite3": "^11.8.2",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -691,7 +692,9 @@ export function updateProjectStatus(db: Database.Database, input: { project_id: 
 }
 
 export function listProjects(db: Database.Database, input: { status?: string }) {
-  if (input.status) {
+  if (input.status !== undefined) {
+    const statusErr = validateProjectStatus(input.status);
+    if (statusErr) return statusErr;
     return db.prepare('SELECT id, name, status, created_at, updated_at FROM projects WHERE status = ? ORDER BY created_at DESC').all(input.status);
   }
   return db.prepare('SELECT id, name, status, created_at, updated_at FROM projects ORDER BY created_at DESC').all();
@@ -1130,6 +1133,7 @@ Expected: FAIL
 import type Database from 'better-sqlite3';
 import crypto from 'crypto';
 import { validateRequired, validateTaskStatus, notFound } from '../validation.js';
+import { ERROR_CODES } from '../constants.js';
 
 export function createTask(db: Database.Database, input: { project_id: string; title: string; description: string; assignee_id?: string }) {
   const idErr = validateRequired(input.project_id, 'project_id');
@@ -1141,6 +1145,11 @@ export function createTask(db: Database.Database, input: { project_id: string; t
 
   const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(input.project_id);
   if (!project) return notFound('Project', input.project_id);
+
+  if (input.assignee_id) {
+    const member = db.prepare('SELECT id FROM team_members WHERE id = ?').get(input.assignee_id);
+    if (!member) return notFound('Team member', input.assignee_id);
+  }
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -1156,7 +1165,7 @@ export function updateTask(db: Database.Database, input: { task_id: string; stat
   const idErr = validateRequired(input.task_id, 'task_id');
   if (idErr) return idErr;
 
-  if (input.status) {
+  if (input.status !== undefined) {
     const statusErr = validateTaskStatus(input.status);
     if (statusErr) return statusErr;
   }
@@ -1164,9 +1173,14 @@ export function updateTask(db: Database.Database, input: { task_id: string; stat
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(input.task_id) as any;
   if (!task) return notFound('Task', input.task_id);
 
+  if (input.assignee_id !== undefined) {
+    const member = db.prepare('SELECT id FROM team_members WHERE id = ?').get(input.assignee_id);
+    if (!member) return notFound('Team member', input.assignee_id);
+  }
+
   const now = new Date().toISOString();
-  const status = input.status ?? task.status;
-  const description = input.description ?? task.description;
+  const status = input.status !== undefined ? input.status : task.status;
+  const description = input.description !== undefined ? input.description : task.description;
   const assigneeId = input.assignee_id !== undefined ? input.assignee_id : task.assignee_id;
 
   db.prepare(
@@ -1190,14 +1204,19 @@ export function listTasks(db: Database.Database, input: { project_id: string; as
   const err = validateRequired(input.project_id, 'project_id');
   if (err) return err;
 
+  if (input.status !== undefined) {
+    const statusErr = validateTaskStatus(input.status);
+    if (statusErr) return statusErr;
+  }
+
   let sql = 'SELECT id, title, assignee_id, status, created_at, updated_at FROM tasks WHERE project_id = ?';
   const params: any[] = [input.project_id];
 
-  if (input.assignee_id) {
+  if (input.assignee_id !== undefined) {
     sql += ' AND assignee_id = ?';
     params.push(input.assignee_id);
   }
-  if (input.status) {
+  if (input.status !== undefined) {
     sql += ' AND status = ?';
     params.push(input.status);
   }
@@ -2369,12 +2388,6 @@ async function main() {
 main().catch(console.error);
 ```
 
-Note: The MCP SDK uses `zod` for schema validation. Add `zod` to dependencies:
-
-```bash
-cd mcp-server && npm install zod
-```
-
 - [ ] **Step 2: Build the server**
 
 Run: `cd mcp-server && npx tsc`
@@ -2408,10 +2421,10 @@ Expected: `dist/` created with compiled JS files, no errors
 Run: `cd mcp-server && echo '{}' | timeout 3 node dist/index.js || true`
 Expected: Server starts without crash (will timeout since it waits for MCP messages — that's expected)
 
-- [ ] **Step 4: Commit any fixes if needed, tag release**
+- [ ] **Step 4: Commit any fixes if needed**
 
 ```bash
-git tag -a v1.0.0 -m "AgentTeam MCP server v1.0.0 - 35 tools, SQLite-backed"
+git add -A && git commit -m "fix: address any issues found during full verification" || echo "Nothing to commit"
 ```
 
 ---
@@ -2425,11 +2438,79 @@ Each agent file follows the 3-layer template from the spec. The role identity is
 
 - [ ] **Step 1: Create agents/project-manager.md**
 
-The PM gets the full orchestration layer plus the shared team protocol. Write the complete prompt per the spec: Role Identity (from guide) + Team Protocol + Role-Specific Constraints + PM Orchestration Layer.
+The PM gets the full orchestration layer plus the shared team protocol. Use this template:
+
+````markdown
+# Role: Project Manager / Scrum Master
+
+## Identity
+
+You are an expert Project Manager and Scrum Master agent with deep experience running agile software delivery teams. [Full role prompt from docs/software_development_team_guide.md]
+
+## Team Protocol
+
+You are a member of a software development team. Your identity on this project is your `member_id`.
+
+- When joining a project, call `get_project_summary` to read the current project state.
+- As you work, call `log_work` to record your progress, decisions, and code against your assigned tasks.
+- Use `add_task_comment` for task-specific communication visible to other team members.
+- Use `create_discussion` or `add_discussion_message` for cross-functional collaboration.
+- Check `list_decisions` for context on past choices that affect your domain.
+- Check `list_artifacts` for deliverables from other agents that you may need.
+- Stay in your lane — do not perform work outside your defined role.
+- When you complete a task, call `update_task` to set its status to `completed`.
+
+## Constraints
+
+- You are the ONLY agent that can call `update_project_summary`.
+- You are the ONLY agent that can call `update_project_status`, `add_team_member`, or `remove_team_member`.
+- You may create discussions, log decisions, and share artifacts.
+
+## Orchestration
+
+- Create projects via `create_project` and receive the project UUID.
+- Write and maintain the project summary via `update_project_summary`.
+- Recruit team members via `add_team_member`, receiving their `member_id`.
+- Break work into tasks via `create_task` and assign to specialists.
+- Spawn specialist subagents, passing them their agent prompt, `project_id`, and `member_id`.
+- Create discussions via `create_discussion` when cross-functional alignment is needed.
+- Log key decisions via `log_decision`.
+- Update project status through its lifecycle via `update_project_status`.
+- Write a close-out summary when archiving or closing a project.
+````
 
 - [ ] **Step 2: Create the remaining 12 agent files**
 
-Each follows the same template: Role Identity + Team Protocol + Role-Specific Constraints. Files to create:
+Each follows the same template (without the Orchestration section). Use this template:
+
+````markdown
+# Role: [Role Name]
+
+## Identity
+
+[Full role prompt from docs/software_development_team_guide.md for this role]
+
+## Team Protocol
+
+You are a member of a software development team. Your identity on this project is your `member_id`.
+
+- When joining a project, call `get_project_summary` to read the current project state.
+- As you work, call `log_work` to record your progress, decisions, and code against your assigned tasks.
+- Use `add_task_comment` for task-specific communication visible to other team members.
+- Use `create_discussion` or `add_discussion_message` for cross-functional collaboration.
+- Check `list_decisions` for context on past choices that affect your domain.
+- Check `list_artifacts` for deliverables from other agents that you may need.
+- Stay in your lane — do not perform work outside your defined role.
+- When you complete a task, call `update_task` to set its status to `completed`.
+
+## Constraints
+
+- You CANNOT call `update_project_summary`, `update_project_status`, `add_team_member`, or `remove_team_member`. Only the Project Manager can.
+- You may create discussions, log decisions, and share artifacts.
+- Do not perform work outside your defined role.
+````
+
+Files to create:
 - `agents/product-manager.md`
 - `agents/ux-ui-designer.md`
 - `agents/ux-researcher.md`
