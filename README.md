@@ -8,6 +8,10 @@ All project state is persisted in SQLite (37 MCP tools across 10 domains: projec
 
 **Designed to be called from any Claude Code project via MCP** — point your `claude_desktop_config.json` at the server and any project can spin up a full team.
 
+### User Journal
+
+As the team works, the Project Manager captures your decisions, preferences, and reasoning from the conversation into a persistent **user journal** — things like devices considered and rejected, cost constraints, form factor preferences, and next-step intentions. These are stored as structured entries scoped to the project (or globally, for cross-project preferences) and reviewed at close-out so nothing important is lost between sessions. The journal is queryable via `list_journal_entries` so future agents can read what past conversations established before starting new work.
+
 ---
 
 ## Project Structure
