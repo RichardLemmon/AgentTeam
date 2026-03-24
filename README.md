@@ -19,6 +19,7 @@ As the team works, the Project Manager captures your decisions, preferences, and
 ```
 AgentTeam/
 ├── agents/               # Agent prompt files — one per role
+│   ├── _base-protocol.md # Shared team protocol, constraints, efficiency rules
 │   ├── project-manager.md
 │   ├── product-manager.md
 │   ├── backend-developer.md
@@ -46,6 +47,7 @@ AgentTeam/
 | Discussions | `create_discussion`, `add_discussion_participant`, `add_discussion_message`, `update_discussion_summary`, `get_discussion`, `list_discussions` |
 | Decisions | `log_decision`, `list_decisions`, `get_decision` |
 | Artifacts | `share_artifact`, `update_artifact`, `list_artifacts`, `get_artifact` |
+| Team Protocol | `get_team_protocol` |
 | User Journal | `log_journal_entry`, `list_journal_entries` |
 
 ## Getting Started
@@ -57,6 +59,10 @@ cd mcp-server
 npm install
 npm run build
 ```
+
+### Token-Efficient Architecture
+
+Agent prompt files contain only the role-specific **Identity** section (~100 words each). Shared team protocol, constraints, and efficiency rules live in a single `agents/_base-protocol.md` file, served on demand via the `get_team_protocol` MCP tool. This lazy-loading approach saves ~6,000 words of context when spawning a full team compared to duplicating the protocol in every agent file. The artifact JSON schema is embedded in the `share_artifact` tool description so agents discover it from the tool itself.
 
 ### 2. Add to your MCP config
 

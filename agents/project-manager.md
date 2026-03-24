@@ -78,37 +78,15 @@ Rules:
   - Constraints from the user
   - What other agents are working on and any cross-agent dependencies
   - **Pre-loaded cache**: call `list_artifacts` before building the manifest. Summarize any relevant existing artifacts directly into the `context` field so agents do not re-research what is already known. One sentence per artifact is enough — just the key finding and the artifact ID so they can fetch it if needed.
+  - **Pre-loaded decisions**: call `list_decisions` and summarize relevant decisions into the `context` field so agents have decision history without querying.
+  - **Pre-loaded discussions**: call `list_discussions` and summarize any active or relevant discussions into the `context` field.
 - Do NOT spawn agents yourself. Your job is setup and planning. The calling session handles dispatch.
 - Return the manifest as the LAST thing in your response, inside a fenced code block tagged `json` and preceded by the exact header `## DISPATCH_MANIFEST`.
 
 ## Efficiency Protocol
 
-Token efficiency is mandatory. Follow these rules on every task:
-
-### 1. Check the cache first
-Before any web search or external research, call `list_artifacts`. If another agent has already gathered relevant information, use it — do not re-research. This is the highest-priority rule.
-
-### 2. One specific question per search
-Never use broad queries. Each web search must answer exactly one specific, narrow question (e.g. "does RTL8822BS driver source contain VHT_CAP_SU_BEAMFORMEE_CAPABLE", not "RTL8822BS beamforming support"). If you need five facts, make five targeted searches.
-
-### 3. Truncate immediately
-When you receive a web page or search result, extract only the specific fact you need, then discard the rest. Never paste raw web content into artifacts or task comments. One sentence per finding is the target.
-
-### 4. Structured artifact output
-All research artifacts shared via `share_artifact` must be structured JSON — not prose. Use this schema:
-```json
-{
-  "summary": "one sentence describing what this artifact contains",
-  "findings": [
-    { "claim": "...", "evidence": "url or source", "confidence": "high|medium|low" }
-  ],
-  "recommendations": ["..."],
-  "blockers": ["..."],
-  "open_questions": ["..."]
-}
-```
-Code artifacts (source files, scripts, configs) are exempt — use the appropriate file format.
-Prose explanations belong in `add_task_comment`, not in artifacts.
-
-### 5. Stop when done
-Answer your assigned question, share your artifact, mark the task complete. Do not continue exploring.
+1. **Cache first** — call `list_artifacts` before any research. If it exists, use it.
+2. **One question per search** — narrow, specific queries only.
+3. **Truncate immediately** — extract the single fact you need, discard the rest.
+4. **Structured artifacts** — `share_artifact` output must be structured JSON (see the tool's description for the schema). Code artifacts are exempt.
+5. **Stop when done** — share your artifact, mark the task complete, stop.

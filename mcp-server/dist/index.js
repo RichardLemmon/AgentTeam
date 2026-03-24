@@ -12,7 +12,11 @@ import { createDiscussion, addDiscussionParticipant, addDiscussionMessage, updat
 import { logDecision, listDecisions, getDecision } from './tools/decisions.js';
 import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './tools/artifacts.js';
 import { logJournalEntry, listJournalEntries } from './tools/journal.js';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 const db = getDb();
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const server = new McpServer({
     name: 'agent-team',
     version: '1.0.0',
@@ -156,8 +160,14 @@ server.tool('get_decision', 'Get a decision by ID', { decision_id: z.string() },
     const result = getDecision(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
 });
+// --- Team Protocol (1) ---
+server.tool('get_team_protocol', 'Returns the shared team protocol, constraints, and efficiency rules that all specialist agents must follow. Call this once on startup.', {}, async () => {
+    const protocolPath = join(__dirname, '../../agents/_base-protocol.md');
+    const content = readFileSync(protocolPath, 'utf-8');
+    return { content: [{ type: 'text', text: content }] };
+});
 // --- Shared Artifacts (4) ---
-server.tool('share_artifact', 'Share an artifact (document, code, etc.) within a project', {
+server.tool('share_artifact', 'Share an artifact (document, code, etc.) within a project. Research artifacts must use structured JSON: { "summary": "one sentence", "findings": [{ "claim": "...", "evidence": "url or source", "confidence": "high|medium|low" }], "recommendations": ["..."], "blockers": ["..."], "open_questions": ["..."] }. Code artifacts are exempt — use the appropriate file format.', {
     project_id: z.string(),
     member_id: z.string(),
     title: z.string(),
