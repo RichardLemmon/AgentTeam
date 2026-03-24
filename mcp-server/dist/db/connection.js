@@ -10,7 +10,7 @@ export function getDb(dbPath) {
         fs.mkdirSync(dir, { recursive: true });
     }
     const db = new Database(resolvedPath);
-    db.pragma('journal_mode = WAL');
+    db.pragma('journal_mode = DELETE');
     db.pragma('foreign_keys = ON');
     initializeSchema(db);
     return db;

@@ -11,6 +11,7 @@ import { addTaskComment, listTaskComments, listMyComments } from './tools/task-c
 import { createDiscussion, addDiscussionParticipant, addDiscussionMessage, updateDiscussionSummary, getDiscussion, listDiscussions, } from './tools/discussions.js';
 import { logDecision, listDecisions, getDecision } from './tools/decisions.js';
 import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './tools/artifacts.js';
+import { logJournalEntry, listJournalEntries } from './tools/journal.js';
 const db = getDb();
 const server = new McpServer({
     name: 'agent-team',
@@ -176,6 +177,19 @@ server.tool('list_artifacts', 'List shared artifacts in a project, optionally fi
 });
 server.tool('get_artifact', 'Get a shared artifact by ID', { artifact_id: z.string() }, async (input) => {
     const result = getArtifact(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+// --- User Journal (2) ---
+server.tool('log_journal_entry', 'Log a user-facing journal entry — captures decisions, preferences, and reasoning from conversations that would otherwise be lost. project_id is optional; omit it for general cross-project conversations.', {
+    project_id: z.string().optional(),
+    entry: z.string(),
+    author: z.string().optional(),
+}, async (input) => {
+    const result = logJournalEntry(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('list_journal_entries', 'List journal entries in chronological order. Optionally filter by project_id; omit to list all entries across all projects.', { project_id: z.string().optional() }, async (input) => {
+    const result = listJournalEntries(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
 });
 // --- Start server ---

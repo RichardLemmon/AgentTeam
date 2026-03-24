@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 export function initializeSchema(db: Database.Database): void {
   const currentVersion = getSchemaVersion(db);
@@ -22,6 +22,7 @@ function getSchemaVersion(db: Database.Database): number {
 
 function applyMigrations(db: Database.Database, fromVersion: number): void {
   if (fromVersion < 1) migrateToV1(db);
+  if (fromVersion < 2) migrateToV2(db);
 }
 
 function migrateToV1(db: Database.Database): void {
@@ -131,5 +132,19 @@ function migrateToV1(db: Database.Database): void {
     );
 
     INSERT INTO schema_version (version) VALUES (1);
+  `);
+}
+
+function migrateToV2(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_journal (
+      id TEXT PRIMARY KEY,
+      project_id TEXT REFERENCES projects(id),
+      author TEXT NOT NULL DEFAULT 'user',
+      entry TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    INSERT INTO schema_version (version) VALUES (2);
   `);
 }

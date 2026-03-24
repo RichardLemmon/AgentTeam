@@ -1,4 +1,4 @@
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 export function initializeSchema(db) {
     const currentVersion = getSchemaVersion(db);
     if (currentVersion < CURRENT_VERSION) {
@@ -15,6 +15,8 @@ function getSchemaVersion(db) {
 function applyMigrations(db, fromVersion) {
     if (fromVersion < 1)
         migrateToV1(db);
+    if (fromVersion < 2)
+        migrateToV2(db);
 }
 function migrateToV1(db) {
     db.exec(`
@@ -123,6 +125,19 @@ function migrateToV1(db) {
     );
 
     INSERT INTO schema_version (version) VALUES (1);
+  `);
+}
+function migrateToV2(db) {
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS user_journal (
+      id TEXT PRIMARY KEY,
+      project_id TEXT REFERENCES projects(id),
+      author TEXT NOT NULL DEFAULT 'user',
+      entry TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    INSERT INTO schema_version (version) VALUES (2);
   `);
 }
 //# sourceMappingURL=schema.js.map
