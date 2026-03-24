@@ -57,7 +57,7 @@ The manifest is a JSON array. Each entry represents one specialist to spawn:
     "role": "backend_developer",
     "member_id": "<UUID from add_team_member>",
     "project_id": "<project UUID>",
-    "agent_prompt_file": "/Users/rlemmon/Documents/workhg/AgentTeam/agents/backend-developer.md",
+    "agent_prompt_file": "/path/to/AgentTeam/agents/backend-developer.md",
     "tasks": [
       {
         "task_id": "<UUID from create_task>",
