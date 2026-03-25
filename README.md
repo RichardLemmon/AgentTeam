@@ -79,6 +79,9 @@ Agent prompt files contain only the role-specific **Identity** section (~100 wor
 
 ### 3. Invoke the Project Manager
 
+## Inside Claude enter:
+Spin up the Project Manager and ask them to investigate [subject]
+
 Pass the contents of `agents/project-manager.md` as the system prompt for a Claude agent, give it a project goal, and let it set up the project and return a dispatch manifest. Then spawn each specialist from the manifest.
 
 ## How It Works
