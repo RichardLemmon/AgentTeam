@@ -19,6 +19,7 @@ import {
 import { logDecision, listDecisions, getDecision } from './tools/decisions.js';
 import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './tools/artifacts.js';
 import { logJournalEntry, listJournalEntries } from './tools/journal.js';
+import { askUserQuestion, listUserQuestions, answerUserQuestion } from './tools/user-questions.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -441,6 +442,43 @@ server.tool(
   { project_id: z.string().optional() },
   async (input) => {
     const result = listJournalEntries(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+// --- User Questions (3) ---
+
+server.tool(
+  'ask_user_question',
+  'Log a question for the user. The orchestrating skill will surface it after dispatch. Include context about why this question matters or what is blocked.',
+  {
+    project_id: z.string(),
+    member_id: z.string(),
+    question: z.string(),
+    context: z.string().optional(),
+  },
+  async (input) => {
+    const result = askUserQuestion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+server.tool(
+  'list_user_questions',
+  'List questions logged by specialists for the user. Filter by status (pending, answered) to find unanswered questions.',
+  { project_id: z.string(), status: z.string().optional() },
+  async (input) => {
+    const result = listUserQuestions(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+server.tool(
+  'answer_user_question',
+  'Write the user\'s answer to a previously asked question',
+  { question_id: z.string(), answer: z.string() },
+  async (input) => {
+    const result = answerUserQuestion(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   }
 );
