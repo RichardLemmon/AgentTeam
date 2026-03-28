@@ -20,6 +20,7 @@ import { logDecision, listDecisions, getDecision } from './tools/decisions.js';
 import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './tools/artifacts.js';
 import { logJournalEntry, listJournalEntries } from './tools/journal.js';
 import { askUserQuestion, listUserQuestions, answerUserQuestion } from './tools/user-questions.js';
+import { requestTeamExpansion, listExpansionRequests, resolveExpansionRequest } from './tools/expansion-requests.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -479,6 +480,47 @@ server.tool(
   { question_id: z.string(), answer: z.string() },
   async (input) => {
     const result = answerUserQuestion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+// --- Expansion Requests (3) ---
+
+server.tool(
+  'request_team_expansion',
+  'Request additional team members when your assigned work grows beyond expected scope. The PM will evaluate and approve or deny.',
+  {
+    project_id: z.string(),
+    requested_by: z.string(),
+    role_needed: z.string(),
+    justification: z.string(),
+  },
+  async (input) => {
+    const result = requestTeamExpansion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+server.tool(
+  'list_expansion_requests',
+  'List team expansion requests for a project, optionally filtered by status (pending, approved, denied)',
+  { project_id: z.string(), status: z.string().optional() },
+  async (input) => {
+    const result = listExpansionRequests(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+server.tool(
+  'resolve_expansion_request',
+  'Approve or deny a team expansion request (PM only)',
+  {
+    request_id: z.string(),
+    status: z.enum(['approved', 'denied']),
+    resolution_note: z.string().optional(),
+  },
+  async (input) => {
+    const result = resolveExpansionRequest(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   }
 );
