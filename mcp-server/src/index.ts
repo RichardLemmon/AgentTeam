@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { getDb } from './db/connection.js';
-import { createProject, getProject, updateProjectStatus, listProjects } from './tools/projects.js';
+import { createProject, getProject, updateProjectStatus, listProjects, deleteProject } from './tools/projects.js';
 import { getProjectSummary, updateProjectSummary, getSummaryVersion, listSummaryHistory } from './tools/summaries.js';
 import { addTeamMember, removeTeamMember, listTeamMembers } from './tools/team-members.js';
 import { createTask, updateTask, getTask, listTasks } from './tools/tasks.js';
@@ -33,7 +33,7 @@ const server = new McpServer({
   version: '1.0.0',
 });
 
-// --- Projects (4) ---
+// --- Projects (5) ---
 
 server.tool(
   'create_project',
@@ -71,6 +71,16 @@ server.tool(
   { status: z.string().optional() },
   async (input) => {
     const result = listProjects(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+);
+
+server.tool(
+  'delete_project',
+  'Permanently delete a project and ALL associated data (tasks, work entries, discussions, artifacts, etc.). This is irreversible.',
+  { project_id: z.string() },
+  async (input) => {
+    const result = deleteProject(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   }
 );
