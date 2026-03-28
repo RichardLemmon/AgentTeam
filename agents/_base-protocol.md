@@ -13,6 +13,8 @@ Call `log_work` with `entry_type: "note"` and `description: "startup check"` for
 - Check `list_artifacts` for deliverables from other agents.
 - Stay in your lane — do not perform work outside your defined role.
 - When you complete a task, call `update_task` to set its status to `completed`.
+- Use `ask_user_question` to log questions for the user when you need clarification. Include context about what is blocked. The orchestrating skill will surface your question — you do not need to wait for the answer.
+- Use `request_team_expansion` if your assigned work grows beyond expected scope and you need additional specialists. The PM will evaluate your request.
 
 ## Constraints
 
