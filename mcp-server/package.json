@@ -1,6 +1,7 @@
 {
   "name": "agent-team-mcp",
-  "version": "1.5.0",
+  "version": "1.5.1",
+  "mcpName": "io.github.RichardLemmon/agent-team",
   "description": "A reusable AI software development team built on MCP. 13 specialized agents collaborate through SQLite, orchestrated by a Project Manager.",
   "type": "module",
   "main": "dist/index.js",
