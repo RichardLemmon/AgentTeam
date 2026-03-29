@@ -14,6 +14,7 @@ describe('Schema', () => {
       'discussion_messages',
       'discussion_participants',
       'discussions',
+      'expansion_requests',
       'project_summaries',
       'projects',
       'schema_version',
@@ -21,15 +22,17 @@ describe('Schema', () => {
       'task_comments',
       'tasks',
       'team_members',
+      'user_journal',
+      'user_questions',
       'work_entries',
     ]);
     db.close();
   });
 
-  it('sets schema version to 1', () => {
+  it('sets schema version to latest', () => {
     const db = createTestDb();
     const row = db.prepare('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1').get() as { version: number };
-    expect(row.version).toBe(1);
+    expect(row.version).toBe(3);
     db.close();
   });
 
