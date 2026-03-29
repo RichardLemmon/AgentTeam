@@ -8,11 +8,14 @@
     "agent-team-mcp": "dist/index.js"
   },
   "files": [
-    "dist",
-    "../agents"
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/_base-protocol.md",
+    "!dist/**/__tests__/**"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp ../agents/_base-protocol.md dist/",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "vitest run",

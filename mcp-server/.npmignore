@@ -1,8 +1,11 @@
 src/
 tests/
 node_modules/
-*.test.ts
-*.test.js
+**/__tests__/
+**/*.test.ts
+**/*.test.js
+**/*.test.d.ts
+**/*.test.js.map
 tsconfig.json
 vitest.config.ts
 .vite/

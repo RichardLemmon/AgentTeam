@@ -15,7 +15,7 @@ import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './too
 import { logJournalEntry, listJournalEntries } from './tools/journal.js';
 import { askUserQuestion, listUserQuestions, answerUserQuestion } from './tools/user-questions.js';
 import { requestTeamExpansion, listExpansionRequests, resolveExpansionRequest } from './tools/expansion-requests.js';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 const db = getDb();
@@ -169,7 +169,10 @@ server.tool('get_decision', 'Get a decision by ID', { decision_id: z.string() },
 });
 // --- Team Protocol (1) ---
 server.tool('get_team_protocol', 'Returns the shared team protocol, constraints, and efficiency rules that all specialist agents must follow. Call this once on startup.', {}, async () => {
-    const protocolPath = join(__dirname, '../../agents/_base-protocol.md');
+    // Try bundled location first (npm install), fall back to repo location (local dev)
+    const bundledPath = join(__dirname, '_base-protocol.md');
+    const repoPath = join(__dirname, '../../agents/_base-protocol.md');
+    const protocolPath = existsSync(bundledPath) ? bundledPath : repoPath;
     const content = readFileSync(protocolPath, 'utf-8');
     return { content: [{ type: 'text', text: content }] };
 });
