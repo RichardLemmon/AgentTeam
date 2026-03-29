@@ -4,7 +4,7 @@
 
 The Project Manager orchestrates: it creates the project, recruits the specialists it needs, breaks work into tasks, and returns a **dispatch manifest** — a JSON array that the calling session uses to spawn each specialist as an independent parallel agent. Specialists read the project summary on joining, log their work and decisions as they go, and share structured research artifacts so no agent re-researches what another has already found.
 
-All project state is persisted in SQLite (37 MCP tools across 10 domains: projects, summaries, team members, tasks, work entries, task comments, discussions, decisions, artifacts, and a user journal). Projects are UUID-scoped and lifecycle-managed (active → paused → archived → closed), so teams can pause and resume work across sessions without losing context.
+All project state is persisted in SQLite (44 MCP tools across 12 domains: projects, summaries, team members, tasks, work entries, task comments, discussions, decisions, artifacts, and a user journal). Projects are UUID-scoped and lifecycle-managed (active → paused → archived → closed), so teams can pause and resume work across sessions without losing context.
 
 **Designed to be called from any Claude Code project via MCP** — point your `claude_desktop_config.json` at the server and any project can spin up a full team.
 
@@ -26,7 +26,7 @@ AgentTeam/
 │   └── ...
 ├── mcp-server/           # TypeScript MCP server
 │   └── src/
-│       ├── index.ts      # Server entry — all 37 tools registered
+│       ├── index.ts      # Server entry — all 44 tools registered
 │       ├── db/
 │       │   ├── schema.ts # Table definitions and migrations
 │       │   └── connection.ts
@@ -38,7 +38,7 @@ AgentTeam/
 
 | Domain | Tools |
 |---|---|
-| Projects | `create_project`, `get_project`, `update_project_status`, `list_projects` |
+| Projects | `create_project`, `get_project`, `update_project_status`, `list_projects`, `delete_project` |
 | Summaries | `update_project_summary`, `get_project_summary`, `get_summary_version`, `list_summary_history` |
 | Team Members | `add_team_member`, `remove_team_member`, `list_team_members` |
 | Tasks | `create_task`, `update_task`, `get_task`, `list_tasks` |
@@ -49,6 +49,8 @@ AgentTeam/
 | Artifacts | `share_artifact`, `update_artifact`, `list_artifacts`, `get_artifact` |
 | Team Protocol | `get_team_protocol` |
 | User Journal | `log_journal_entry`, `list_journal_entries` |
+| User Questions | `ask_user_question`, `list_user_questions`, `answer_user_question` |
+| Expansion Requests | `request_team_expansion`, `list_expansion_requests`, `resolve_expansion_request` |
 
 ## Getting Started
 
@@ -77,14 +79,43 @@ Agent prompt files contain only the role-specific **Identity** section (~100 wor
 }
 ```
 
-### 3. Invoke the Project Manager
+### 3. Install the /team skill (Claude Code only)
+
+Add the skill path to your Claude Code settings or project `.claude/settings.json`:
+
+```json
+{
+  "skills": [
+    "/path/to/AgentTeam/agents/skills/team.md"
+  ]
+}
+```
+
+Then use `/team <goal>` to spin up a full team.
+
+### 4. Invoke the Project Manager
 
 Pass the contents of `agents/project-manager.md` as the system prompt for a Claude agent, give it a project goal, and let it set up the project and return a dispatch manifest. Then spawn each specialist from the manifest.
 
-## Example
-**Enter the following command inside a claude prompt:**
+## Quick Start
+
+**With the `/team` skill (Claude Code):**
+
+```
+/team build me a REST API for task management
+```
+
+**Without the skill:**
 
 "Spin up the Project Manager and ask them to investigate [subject]"
+
+**Manage projects:**
+
+```
+/team --projects              # list all projects
+/team --projects active       # filter by status
+/team --projects delete <name> # delete a project
+```
 
 
 ## How It Works
