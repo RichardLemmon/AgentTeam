@@ -54,9 +54,17 @@ AgentTeam/
 
 ## Getting Started
 
-### 1. Add to your MCP config
+### 1. Install the MCP server
 
-**Via npx (recommended — no clone needed):**
+**One command (recommended):**
+
+```bash
+claude mcp add agent-team -- npx agent-team-mcp
+```
+
+That's it. Claude Code will now launch the server automatically when needed.
+
+**Or manually edit your MCP config** (`~/.claude/settings.json` or project `.claude/settings.json`):
 
 ```json
 {
@@ -72,20 +80,11 @@ AgentTeam/
 **Or from a local clone:**
 
 ```bash
-cd mcp-server
+git clone https://github.com/RichardLemmon/AgentTeam.git
+cd AgentTeam/mcp-server
 npm install
 npm run build
-```
-
-```json
-{
-  "mcpServers": {
-    "agent-team": {
-      "command": "node",
-      "args": ["/path/to/AgentTeam/mcp-server/dist/index.js"]
-    }
-  }
-}
+claude mcp add agent-team -- node /path/to/AgentTeam/mcp-server/dist/index.js
 ```
 
 ### Token-Efficient Architecture
