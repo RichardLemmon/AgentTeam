@@ -1,4 +1,17 @@
 #!/usr/bin/env node
+import { argv } from 'process';
+// CLI flags — handle before MCP server startup
+if (argv.includes('--print-skill')) {
+    const { readFileSync, existsSync } = await import('fs');
+    const { join, dirname } = await import('path');
+    const { fileURLToPath } = await import('url');
+    const __dir = dirname(fileURLToPath(import.meta.url));
+    const bundled = join(__dir, 'SKILL.md');
+    const repo = join(__dir, '../../.claude/skills/team/SKILL.md');
+    const path = existsSync(bundled) ? bundled : repo;
+    process.stdout.write(readFileSync(path, 'utf-8'));
+    process.exit(0);
+}
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';

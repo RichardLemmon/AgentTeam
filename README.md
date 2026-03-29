@@ -91,23 +91,24 @@ claude mcp add agent-team -- node /path/to/AgentTeam/mcp-server/dist/index.js
 
 Agent prompt files contain only the role-specific **Identity** section (~100 words each). Shared team protocol, constraints, and efficiency rules live in a single `agents/_base-protocol.md` file, served on demand via the `get_team_protocol` MCP tool. This lazy-loading approach saves ~6,000 words of context when spawning a full team compared to duplicating the protocol in every agent file. The artifact JSON schema is embedded in the `share_artifact` tool description so agents discover it from the tool itself.
 
-### 2. Install the /team skill (Claude Code only)
+### 2. Install the /team skill (optional, Claude Code only)
 
-Add the skill path to your Claude Code settings or project `.claude/settings.json`:
+Install the `/team` slash command globally so it works in any project:
 
-```json
-{
-  "skills": [
-    "/path/to/AgentTeam/agents/skills/team.md"
-  ]
-}
+```bash
+mkdir -p ~/.claude/skills/team && npx agent-team-mcp --print-skill > ~/.claude/skills/team/SKILL.md
 ```
 
-Then use `/team <goal>` to spin up a full team.
+Or copy it manually from the repo:
 
-### 4. Invoke the Project Manager
+```bash
+mkdir -p ~/.claude/skills/team
+curl -o ~/.claude/skills/team/SKILL.md https://raw.githubusercontent.com/RichardLemmon/AgentTeam/main/.claude/skills/team/SKILL.md
+```
 
-Pass the contents of `agents/project-manager.md` as the system prompt for a Claude agent, give it a project goal, and let it set up the project and return a dispatch manifest. Then spawn each specialist from the manifest.
+Then use `/team <goal>` to spin up a full team from any project.
+
+**Without the skill**, you can still use AgentTeam — just tell Claude to "spin up the team" and the MCP server's `get_orchestration_instructions` tool will guide it through the process.
 
 ## Quick Start
 

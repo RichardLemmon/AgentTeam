@@ -1,6 +1,6 @@
 {
   "name": "agent-team-mcp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "A reusable AI software development team built on MCP. 13 specialized agents collaborate through SQLite, orchestrated by a Project Manager.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,10 +13,11 @@
     "dist/**/*.d.ts",
     "dist/agents/*.md",
     "dist/CLAUDE.md",
+    "dist/SKILL.md",
     "!dist/**/__tests__/**"
   ],
   "scripts": {
-    "build": "tsc && cp ../agents/*.md dist/agents/ && cp ../CLAUDE.md dist/",
+    "build": "tsc && cp ../agents/*.md dist/agents/ && cp ../CLAUDE.md dist/ && cp ../.claude/skills/team/SKILL.md dist/",
     "prebuild": "mkdir -p dist/agents",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
