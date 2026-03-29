@@ -13,7 +13,7 @@ Parse the user's input to determine the mode:
 1. If args start with `--projects` → **Project Management Mode**
 2. If args contain `--review` → set REVIEW_MODE=true, strip the flag, remaining text is the goal
 3. If args have text (after flag removal) → **Fast Lane Mode** with that text as the goal
-4. If no args → **Conversational Mode** — ask: "What would you like the team to work on?"
+4. If no args → **Conversational Mode** — list projects with numbered selection, then ask for goal
 
 ---
 
@@ -21,20 +21,25 @@ Parse the user's input to determine the mode:
 
 Parse the subcommand after `--projects`:
 
-- **No subcommand** → call `list_projects` via MCP, display grouped by status:
+- **No subcommand** → call `list_projects` via MCP, display with numbered selection grouped by status:
 
 ```
 📁 Projects:
 
    Active
-   • <id-prefix>  <name>     (<date>)
+   [1] <name>     (<date>)
+   [2] <name>     (<date>)
 
    Paused
-   • <id-prefix>  <name>     (<date>)
+   [3] <name>     (<date>)
 
    Archived
-   • <id-prefix>  <name>     (<date>)
+   [4] <name>     (<date>)
+
+Type a number to focus the team on that project, or /team <goal> to start a new one.
 ```
+
+If the user responds with a number, load that project's summary via `get_project_summary` and ask: "What would you like the team to do on this project?"
 
 If empty: "No projects found."
 
@@ -57,6 +62,31 @@ If empty: "No projects found."
 - **`archive` / `pause` / `resume` / `close` followed by `<name-or-id>`** → resolve the project, then call `update_project_status` with the appropriate status (`resume` maps to `active`). Display: "Updated <name> → <new status>."
 
 **STOP after project management. Do not proceed to dispatch.**
+
+---
+
+## Conversational Mode (no args)
+
+When invoked with no arguments:
+
+1. Call `list_projects` via MCP
+2. If projects exist, display them with numbered selection grouped by status:
+
+```
+📁 Projects:
+
+   Active
+   [1] <name>     (<date>)
+   [2] <name>     (<date>)
+
+   Paused
+   [3] <name>     (<date>)
+
+Type a number to focus the team on that project, or /team <goal> to start a new one.
+```
+
+3. If the user responds with a number, load that project's summary via `get_project_summary` and ask: "What would you like the team to do on this project?" Then proceed to Dispatch Mode with the project context included in the goal.
+4. If no projects exist, ask: "What would you like the team to work on?"
 
 ---
 
