@@ -371,19 +371,52 @@ server.tool(
   }
 );
 
-// --- Team Protocol (1) ---
+// --- Team Protocol & Orchestration (4) ---
+
+function resolveAgentFile(filename: string): string {
+  // Try bundled location first (npm install), fall back to repo location (local dev)
+  const bundledPath = join(__dirname, 'agents', filename);
+  const repoPath = join(__dirname, '../../agents', filename);
+  if (existsSync(bundledPath)) return bundledPath;
+  if (existsSync(repoPath)) return repoPath;
+  throw new Error(`Agent file not found: ${filename}`);
+}
 
 server.tool(
   'get_team_protocol',
   'Returns the shared team protocol, constraints, and efficiency rules that all specialist agents must follow. Call this once on startup.',
   {},
   async () => {
-    // Try bundled location first (npm install), fall back to repo location (local dev)
-    const bundledPath = join(__dirname, '_base-protocol.md');
-    const repoPath = join(__dirname, '../../agents/_base-protocol.md');
-    const protocolPath = existsSync(bundledPath) ? bundledPath : repoPath;
-    const content = readFileSync(protocolPath, 'utf-8');
+    const content = readFileSync(resolveAgentFile('_base-protocol.md'), 'utf-8');
     return { content: [{ type: 'text', text: content }] };
+  }
+);
+
+server.tool(
+  'get_orchestration_instructions',
+  'Returns step-by-step instructions for how to orchestrate an AgentTeam. Call this FIRST when a user asks to spin up a team, build something with the team, or use AgentTeam. The instructions explain the full pipeline: spawning the PM, parsing the dispatch manifest, launching specialists, handling user questions and expansion requests.',
+  {},
+  async () => {
+    const bundledPath = join(__dirname, 'CLAUDE.md');
+    const repoPath = join(__dirname, '../../CLAUDE.md');
+    const filePath = existsSync(bundledPath) ? bundledPath : repoPath;
+    const content = readFileSync(filePath, 'utf-8');
+    return { content: [{ type: 'text', text: content }] };
+  }
+);
+
+server.tool(
+  'get_agent_prompt',
+  'Returns the prompt file for a specific agent role. Use this to load agent identity prompts before spawning specialists. Valid roles: project-manager, product-manager, ux-ui-designer, ux-researcher, frontend-developer, backend-developer, full-stack-developer, mobile-developer, devops-engineer, qa-engineer, security-engineer, data-engineer, data-scientist.',
+  { role: z.string().describe('The agent role in hyphenated form, e.g. "backend-developer" or "project-manager"') },
+  async (input) => {
+    const filename = `${input.role}.md`;
+    try {
+      const content = readFileSync(resolveAgentFile(filename), 'utf-8');
+      return { content: [{ type: 'text', text: content }] };
+    } catch {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: `Agent prompt not found: ${input.role}`, code: 'NOT_FOUND' }) }] };
+    }
   }
 );
 
