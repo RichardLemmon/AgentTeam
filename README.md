@@ -54,19 +54,28 @@ AgentTeam/
 
 ## Getting Started
 
-### 1. Install dependencies and build
+### 1. Add to your MCP config
+
+**Via npx (recommended — no clone needed):**
+
+```json
+{
+  "mcpServers": {
+    "agent-team": {
+      "command": "npx",
+      "args": ["agent-team-mcp"]
+    }
+  }
+}
+```
+
+**Or from a local clone:**
 
 ```bash
 cd mcp-server
 npm install
 npm run build
 ```
-
-### Token-Efficient Architecture
-
-Agent prompt files contain only the role-specific **Identity** section (~100 words each). Shared team protocol, constraints, and efficiency rules live in a single `agents/_base-protocol.md` file, served on demand via the `get_team_protocol` MCP tool. This lazy-loading approach saves ~6,000 words of context when spawning a full team compared to duplicating the protocol in every agent file. The artifact JSON schema is embedded in the `share_artifact` tool description so agents discover it from the tool itself.
-
-### 2. Add to your MCP config
 
 ```json
 {
@@ -79,7 +88,11 @@ Agent prompt files contain only the role-specific **Identity** section (~100 wor
 }
 ```
 
-### 3. Install the /team skill (Claude Code only)
+### Token-Efficient Architecture
+
+Agent prompt files contain only the role-specific **Identity** section (~100 words each). Shared team protocol, constraints, and efficiency rules live in a single `agents/_base-protocol.md` file, served on demand via the `get_team_protocol` MCP tool. This lazy-loading approach saves ~6,000 words of context when spawning a full team compared to duplicating the protocol in every agent file. The artifact JSON schema is embedded in the `share_artifact` tool description so agents discover it from the tool itself.
+
+### 2. Install the /team skill (Claude Code only)
 
 Add the skill path to your Claude Code settings or project `.claude/settings.json`:
 
