@@ -1,4 +1,4 @@
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 export function initializeSchema(db) {
     const currentVersion = getSchemaVersion(db);
     if (currentVersion < CURRENT_VERSION) {
@@ -17,6 +17,8 @@ function applyMigrations(db, fromVersion) {
         migrateToV1(db);
     if (fromVersion < 2)
         migrateToV2(db);
+    if (fromVersion < 3)
+        migrateToV3(db);
 }
 function migrateToV1(db) {
     db.exec(`
@@ -138,6 +140,35 @@ function migrateToV2(db) {
     );
 
     INSERT INTO schema_version (version) VALUES (2);
+  `);
+}
+function migrateToV3(db) {
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS user_questions (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      member_id TEXT NOT NULL REFERENCES team_members(id),
+      question TEXT NOT NULL,
+      context TEXT,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'answered')),
+      answer TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      answered_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS expansion_requests (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      requested_by TEXT NOT NULL REFERENCES team_members(id),
+      role_needed TEXT NOT NULL,
+      justification TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'denied')),
+      resolution_note TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
+
+    INSERT INTO schema_version (version) VALUES (3);
   `);
 }
 //# sourceMappingURL=schema.js.map

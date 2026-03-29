@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { getDb } from './db/connection.js';
-import { createProject, getProject, updateProjectStatus, listProjects } from './tools/projects.js';
+import { createProject, getProject, updateProjectStatus, listProjects, deleteProject } from './tools/projects.js';
 import { getProjectSummary, updateProjectSummary, getSummaryVersion, listSummaryHistory } from './tools/summaries.js';
 import { addTeamMember, removeTeamMember, listTeamMembers } from './tools/team-members.js';
 import { createTask, updateTask, getTask, listTasks } from './tools/tasks.js';
@@ -12,6 +12,8 @@ import { createDiscussion, addDiscussionParticipant, addDiscussionMessage, updat
 import { logDecision, listDecisions, getDecision } from './tools/decisions.js';
 import { shareArtifact, updateArtifact, listArtifacts, getArtifact } from './tools/artifacts.js';
 import { logJournalEntry, listJournalEntries } from './tools/journal.js';
+import { askUserQuestion, listUserQuestions, answerUserQuestion } from './tools/user-questions.js';
+import { requestTeamExpansion, listExpansionRequests, resolveExpansionRequest } from './tools/expansion-requests.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -21,7 +23,7 @@ const server = new McpServer({
     name: 'agent-team',
     version: '1.0.0',
 });
-// --- Projects (4) ---
+// --- Projects (5) ---
 server.tool('create_project', 'Create a new project with a name and description', { name: z.string(), description: z.string() }, async (input) => {
     const result = createProject(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
@@ -36,6 +38,10 @@ server.tool('update_project_status', 'Update the status of a project (active →
 });
 server.tool('list_projects', 'List all projects, optionally filtered by status', { status: z.string().optional() }, async (input) => {
     const result = listProjects(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('delete_project', 'Permanently delete a project and ALL associated data (tasks, work entries, discussions, artifacts, etc.). This is irreversible.', { project_id: z.string() }, async (input) => {
+    const result = deleteProject(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
 });
 // --- Summaries (4) ---
@@ -200,6 +206,46 @@ server.tool('log_journal_entry', 'Log a user-facing journal entry — captures d
 });
 server.tool('list_journal_entries', 'List journal entries in chronological order. Optionally filter by project_id; omit to list all entries across all projects.', { project_id: z.string().optional() }, async (input) => {
     const result = listJournalEntries(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+// --- User Questions (3) ---
+server.tool('ask_user_question', 'Log a question for the user. The orchestrating skill will surface it after dispatch. Include context about why this question matters or what is blocked.', {
+    project_id: z.string(),
+    member_id: z.string(),
+    question: z.string(),
+    context: z.string().optional(),
+}, async (input) => {
+    const result = askUserQuestion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('list_user_questions', 'List questions logged by specialists for the user. Filter by status (pending, answered) to find unanswered questions.', { project_id: z.string(), status: z.string().optional() }, async (input) => {
+    const result = listUserQuestions(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('answer_user_question', 'Write the user\'s answer to a previously asked question', { question_id: z.string(), answer: z.string() }, async (input) => {
+    const result = answerUserQuestion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+// --- Expansion Requests (3) ---
+server.tool('request_team_expansion', 'Request additional team members when your assigned work grows beyond expected scope. The PM will evaluate and approve or deny.', {
+    project_id: z.string(),
+    requested_by: z.string(),
+    role_needed: z.string(),
+    justification: z.string(),
+}, async (input) => {
+    const result = requestTeamExpansion(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('list_expansion_requests', 'List team expansion requests for a project, optionally filtered by status (pending, approved, denied)', { project_id: z.string(), status: z.string().optional() }, async (input) => {
+    const result = listExpansionRequests(db, input);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
+server.tool('resolve_expansion_request', 'Approve or deny a team expansion request (PM only)', {
+    request_id: z.string(),
+    status: z.enum(['approved', 'denied']),
+    resolution_note: z.string().optional(),
+}, async (input) => {
+    const result = resolveExpansionRequest(db, input);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
 });
 // --- Start server ---

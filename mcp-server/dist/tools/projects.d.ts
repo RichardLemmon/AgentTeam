@@ -30,3 +30,11 @@ export declare function updateProjectStatus(db: Database.Database, input: {
 export declare function listProjects(db: Database.Database, input: {
     status?: string;
 }): unknown[] | import("../validation.js").ToolError;
+export declare function deleteProject(db: Database.Database, input: {
+    project_id: string;
+}): import("../validation.js").ToolError | {
+    deleted: boolean;
+    project_id: string;
+    name: any;
+    counts: Record<string, number>;
+};
