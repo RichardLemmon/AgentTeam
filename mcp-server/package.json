@@ -1,6 +1,6 @@
 {
   "name": "agent-team-mcp",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "mcpName": "io.github.RichardLemmon/agent-team",
   "description": "A reusable AI software development team built on MCP. 13 specialized agents collaborate through SQLite, orchestrated by a Project Manager.",
   "type": "module",
@@ -25,7 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build",
-    "postinstall": "node -e \"const fs=require('fs'),p=require('path'),d=p.join(require('os').homedir(),'.claude','skills','team');try{fs.mkdirSync(d,{recursive:true});fs.copyFileSync(p.join(__dirname,'dist','SKILL.md'),p.join(d,'SKILL.md'));console.log('AgentTeam /team skill installed to ~/.claude/skills/team/')}catch(e){}\""
+    "postinstall": "node -e \"const fs=require('fs'),p=require('path'),d=p.join(require('os').homedir(),'.claude','skills','agent-team');try{fs.mkdirSync(d,{recursive:true});fs.copyFileSync(p.join(__dirname,'dist','SKILL.md'),p.join(d,'SKILL.md'));console.log('AgentTeam /team skill installed to ~/.claude/skills/agent-team/')}catch(e){}\""
   },
   "keywords": [
     "mcp",

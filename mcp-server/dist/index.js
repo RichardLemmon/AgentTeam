@@ -19,7 +19,7 @@ if (argv.includes('--print-skill')) {
     const { fileURLToPath } = await import('url');
     const __dir = dirname(fileURLToPath(import.meta.url));
     const home = process.env.HOME || process.env.USERPROFILE || '.';
-    const skillDir = join(home, '.claude', 'skills', 'team');
+    const skillDir = join(home, '.claude', 'skills', 'agent-team');
     const skillDest = join(skillDir, 'SKILL.md');
     if (!existsSync(skillDest)) {
         const bundled = join(__dir, 'SKILL.md');
