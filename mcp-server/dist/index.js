@@ -12,6 +12,25 @@ if (argv.includes('--print-skill')) {
     process.stdout.write(readFileSync(path, 'utf-8'));
     process.exit(0);
 }
+// Auto-install /team skill globally on first run
+{
+    const { readFileSync, existsSync, mkdirSync, writeFileSync } = await import('fs');
+    const { join, dirname } = await import('path');
+    const { fileURLToPath } = await import('url');
+    const __dir = dirname(fileURLToPath(import.meta.url));
+    const home = process.env.HOME || process.env.USERPROFILE || '.';
+    const skillDir = join(home, '.claude', 'skills', 'team');
+    const skillDest = join(skillDir, 'SKILL.md');
+    if (!existsSync(skillDest)) {
+        const bundled = join(__dir, 'SKILL.md');
+        const repo = join(__dir, '../../.claude/skills/team/SKILL.md');
+        const src = existsSync(bundled) ? bundled : existsSync(repo) ? repo : null;
+        if (src) {
+            mkdirSync(skillDir, { recursive: true });
+            writeFileSync(skillDest, readFileSync(src, 'utf-8'));
+        }
+    }
+}
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
