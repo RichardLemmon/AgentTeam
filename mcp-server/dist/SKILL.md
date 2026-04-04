@@ -8,12 +8,32 @@ user-invocable: true
 
 Parse the user's input to determine the mode:
 
+## Team Mode State
+
+Team mode uses a state file at `~/.claude/.agent-team-active` to maintain session continuity. When this file exists, ALL user messages are routed through this skill automatically (via CLAUDE.md rule).
+
+The state file is JSON:
+```json
+{
+  "project_id": "uuid",
+  "project_name": "My Project"
+}
+```
+
 ## Mode Detection
 
+First, check if `~/.claude/.agent-team-active` exists:
+- If it exists AND args start with `--stop` → **Exit Team Mode** (delete the file, display "Exited team mode.", STOP)
+- If it exists AND no explicit `/team` invocation (i.e., this was auto-routed by CLAUDE.md) → **Continuation Mode**
+- If it exists AND user explicitly typed `/team` with new args → proceed to normal mode detection below (the new command takes priority)
+
+Then for explicit `/team` invocations:
+
 1. If args start with `--projects` → **Project Management Mode**
-2. If args contain `--review` → set REVIEW_MODE=true, strip the flag, remaining text is the goal
-3. If args have text (after flag removal) → **Fast Lane Mode** with that text as the goal
-4. If no args → **Conversational Mode** — list projects with numbered selection, then ask for goal
+2. If args contain `--stop` → **Exit Team Mode** (delete state file, display "Exited team mode.", STOP)
+3. If args contain `--review` → set REVIEW_MODE=true, strip the flag, remaining text is the goal
+4. If args have text (after flag removal) → **Fast Lane Mode** with that text as the goal
+5. If no args → **Conversational Mode** — list projects with numbered selection, then ask for goal
 
 ---
 
@@ -59,9 +79,23 @@ If empty: "No projects found."
   6. On "yes", call `delete_project`. Display: "Deleted."
   7. On anything else: "Cancelled."
 
-- **`archive` / `pause` / `resume` / `close` followed by `<name-or-id>`** → resolve the project, then call `update_project_status` with the appropriate status (`resume` maps to `active`). Display: "Updated <name> → <new status>."
+- **`archive` / `pause` / `resume` / `close` followed by `<name-or-id>`** → resolve the project, then call `update_project_status` with the appropriate status (`resume` maps to `active`). If the action is `archive`, `pause`, or `close`, also delete `~/.claude/.agent-team-active` if it references this project. Display: "Updated <name> → <new status>."
 
 **STOP after project management. Do not proceed to dispatch.**
+
+---
+
+## Continuation Mode
+
+When the state file exists and the user's message was auto-routed (not an explicit `/team` command):
+
+1. Read `~/.claude/.agent-team-active` to get `project_id` and `project_name`
+2. Call `get_project_summary` with the `project_id` to load current project context
+3. Treat the user's message as a follow-up instruction for this project
+4. Proceed to **Dispatch Mode** with the goal set to the user's message and the project context included
+5. When displaying the manifest, remind the user: "Type `/team --stop` to exit team mode."
+
+This ensures the user continues interacting with "the team" rather than Claude directly.
 
 ---
 
@@ -190,6 +224,17 @@ After all specialists finish:
 
 7. If approved expansions exist, dispatch the new specialists (repeat from Step 5 with the supplemental manifest)
 
+### Step 8: Activate Team Mode
+
+After dispatch completes, write the state file to keep team mode active for follow-up messages:
+
+```bash
+echo '{"project_id":"<PROJECT_ID>","project_name":"<PROJECT_NAME>"}' > ~/.claude/.agent-team-active
+```
+
 ### Completion
 
-Display a brief summary of what was accomplished. Do not ask "is this okay?" or similar.
+Display a brief summary of what was accomplished, followed by:
+"Team mode active — your next messages will be routed to the team. Type `/team --stop` to exit."
+
+Do not ask "is this okay?" or similar.
